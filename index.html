@@ -29,7 +29,6 @@
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
   <p id="status">ステータス: 未接続</p>
-  <p id="output">受信データ: </p>
 
   <div id="joystick-container">
     <div id="joystick"></div>
@@ -47,7 +46,6 @@
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
     const status = document.getElementById('status');
-    const output = document.getElementById('output');
 
     // ジョイスティックの設定
     const joystick = document.getElementById('joystick');
@@ -73,14 +71,28 @@
       joystickY = Math.round((offsetY / maxDistance) * 100);
     }
 
+    function resetJoystickPosition() {
+      joystick.style.transform = 'translate(0, 0)';
+      joystickX = 0;
+      joystickY = 0;
+    }
+
     container.addEventListener('mousemove', (event) => {
       updateJoystickPosition(event.clientX, event.clientY);
+    });
+
+    container.addEventListener('mouseleave', () => {
+      resetJoystickPosition();
     });
 
     container.addEventListener('touchmove', (event) => {
       event.preventDefault();
       const touch = event.touches[0];
       updateJoystickPosition(touch.clientX, touch.clientY);
+    });
+
+    container.addEventListener('touchend', () => {
+      resetJoystickPosition();
     });
 
     // Bluetooth接続
@@ -99,9 +111,6 @@
 
         disconnectButton.disabled = false;
         connectButton.disabled = true;
-
-        characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleData);
 
         intervalId = setInterval(sendJoystickData, 100); // 1秒に10回送信
       } catch (error) {
@@ -128,12 +137,6 @@
         const encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(data));
       }
-    }
-
-    // 受信処理
-    function handleData(event) {
-      const decoder = new TextDecoder();
-      output.textContent += decoder.decode(event.target.value) + '\n';
     }
   </script>
 </body>
