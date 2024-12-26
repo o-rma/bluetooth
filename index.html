@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Web Serial API - HC-05通信</title>
+  <title>JDY-16とBluetooth通信</title>
 </head>
 <body>
-  <h1>HC-05とシリアル通信</h1>
+  <h1>JDY-16とBluetooth通信</h1>
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
   <input id="input" type="text" placeholder="送信データ" />
@@ -15,10 +15,10 @@
   <p id="output">受信データ: </p>
 
   <script>
-    let port;
-    let reader;
-    let writer;
-    let isReading = false;
+    let bluetoothDevice;
+    let gattServer;
+    let service;
+    let characteristic;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
@@ -30,21 +30,29 @@
     // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
       try {
-        // シリアルポートを選択
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 }); // HC-05はデフォルトで9600bps
+        // デバイス検索
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] // JDY-16のシリアルサービスUUID
+        });
 
-        writer = port.writable.getWriter();
-        reader = port.readable.getReader();
-        isReading = true;
-
+        // GATTサーバーに接続
+        gattServer = await bluetoothDevice.gatt.connect();
         status.textContent = 'ステータス: 接続中';
+
+        // サービスとキャラクタリスティック取得
+        service = await gattServer.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+        characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb'); // 通信用UUID
+
+        // 通信準備完了
         disconnectButton.disabled = false;
         sendButton.disabled = false;
         connectButton.disabled = true;
 
-        // データの受信処理
-        readLoop();
+        // データ受信設定
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
@@ -53,11 +61,9 @@
 
     // 切断ボタンイベント
     disconnectButton.addEventListener('click', async () => {
-      isReading = false;
-      reader.releaseLock();
-      writer.releaseLock();
-      await port.close();
-
+      if (gattServer && gattServer.connected) {
+        gattServer.disconnect();
+      }
       status.textContent = 'ステータス: 切断';
       connectButton.disabled = false;
       disconnectButton.disabled = true;
@@ -66,26 +72,16 @@
 
     // データ送信ボタンイベント
     sendButton.addEventListener('click', async () => {
-      const data = inputField.value + '\n'; // 改行コードを付与
+      const data = inputField.value;
       const encoder = new TextEncoder();
-      await writer.write(encoder.encode(data));
+      await characteristic.writeValue(encoder.encode(data));
       inputField.value = ''; // 入力フィールドをクリア
     });
 
-    // データ受信ループ
-    async function readLoop() {
+    // データ受信ハンドラ
+    function handleData(event) {
       const decoder = new TextDecoder();
-      while (isReading) {
-        try {
-          const { value, done } = await reader.read();
-          if (done) break;
-          output.textContent += decoder.decode(value); // 受信データを追加表示
-        } catch (error) {
-          console.error(error);
-          status.textContent = 'エラー: ' + error.message;
-          break;
-        }
-      }
+      output.textContent += decoder.decode(event.target.value) + '\n';
     }
   </script>
 </body>
