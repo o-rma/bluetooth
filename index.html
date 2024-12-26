@@ -13,11 +13,7 @@
   <button id="send" disabled>送信</button>
   <p id="status">ステータス: 未接続</p>
   <p id="output">受信データ: </p>
-  <div id="joystick" class="joystick">
-  <div id="joystick-frame" class="joystick-frame">
-    <div id="joystick-ball" class="joystick-ball"></div>
-  </div>
-</div>
+
 
   <script>
     let bluetoothDevice;
@@ -88,6 +84,11 @@
       const decoder = new TextDecoder();
       output.textContent += decoder.decode(event.target.value) + '\n';
     }
+      <div id="joystick" class="joystick">
+  <div id="joystick-frame" class="joystick-frame">
+    <div id="joystick-ball" class="joystick-ball"></div>
+  </div>
+</div>
   </script>
 </body>
 </html>
