@@ -3,68 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bluetooth通信</title>
+  <title>Bluetooth サービス一覧</title>
 </head>
 <body>
-  <h1>Bluetooth デバイス接続</h1>
+  <h1>Bluetooth サービス一覧</h1>
   <button id="connect">接続</button>
-  <button id="disconnect" disabled>切断</button>
+  <ul id="services"></ul>
   <p id="status">ステータス: 未接続</p>
-  <p id="data">受信データ: </p>
   <script>
-    let bluetoothDevice = null;
-    let characteristic = null;
-
     const connectButton = document.getElementById('connect');
-    const disconnectButton = document.getElementById('disconnect');
+    const servicesList = document.getElementById('services');
     const status = document.getElementById('status');
-    const dataDisplay = document.getElementById('data');
+
+    let bluetoothDevice = null;
 
     // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
       try {
         // デバイスを検索
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: ['battery_service'] // サービスUUIDを指定
+          acceptAllDevices: true // 全てのデバイスを許可
         });
 
-        // サーバーに接続
+        // GATTサーバーに接続
         const server = await bluetoothDevice.gatt.connect();
         status.textContent = 'ステータス: 接続中';
 
-        // 特定のサービスを取得
-        const service = await server.getPrimaryService('battery_service');
+        // サービス一覧を取得
+        const services = await server.getPrimaryServices();
 
-        // 特定の特性を取得
-        characteristic = await service.getCharacteristic('battery_level');
+        servicesList.innerHTML = ''; // リストを初期化
 
-        // 通知を受け取る設定
-        await characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleData);
+        services.forEach(service => {
+          const listItem = document.createElement('li');
+          listItem.textContent = `UUID: ${service.uuid}`;
+          servicesList.appendChild(listItem);
+        });
 
-        status.textContent = 'ステータス: データ受信待ち';
-        disconnectButton.disabled = false;
+        status.textContent = 'ステータス: サービス取得完了';
+
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
       }
     });
-
-    // 切断ボタンイベント
-    disconnectButton.addEventListener('click', () => {
-      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
-        bluetoothDevice.gatt.disconnect();
-        status.textContent = 'ステータス: 切断';
-        disconnectButton.disabled = true;
-      }
-    });
-
-    // データ受信処理
-    function handleData(event) {
-      const value = event.target.value.getUint8(0);
-      dataDisplay.textContent = `受信データ: ${value}`;
-    }
   </script>
 </body>
 </html>
