@@ -54,23 +54,33 @@
     const container = document.getElementById('joystick-container');
     let containerRect = container.getBoundingClientRect();
 
-    container.addEventListener('mousemove', (event) => {
+    function updateJoystickPosition(x, y) {
       const centerX = containerRect.width / 2;
       const centerY = containerRect.height / 2;
-      let x = event.clientX - containerRect.left - centerX;
-      let y = event.clientY - containerRect.top - centerY;
+      let offsetX = x - containerRect.left - centerX;
+      let offsetY = y - containerRect.top - centerY;
 
-      const distance = Math.sqrt(x * x + y * y);
+      const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
       const maxDistance = containerRect.width / 2 - 25;
       if (distance > maxDistance) {
         const ratio = maxDistance / distance;
-        x *= ratio;
-        y *= ratio;
+        offsetX *= ratio;
+        offsetY *= ratio;
       }
 
-      joystick.style.transform = `translate(${x}px, ${y}px)`;
-      joystickX = Math.round((x / maxDistance) * 100);
-      joystickY = Math.round((y / maxDistance) * 100);
+      joystick.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      joystickX = Math.round((offsetX / maxDistance) * 100);
+      joystickY = Math.round((offsetY / maxDistance) * 100);
+    }
+
+    container.addEventListener('mousemove', (event) => {
+      updateJoystickPosition(event.clientX, event.clientY);
+    });
+
+    container.addEventListener('touchmove', (event) => {
+      event.preventDefault();
+      const touch = event.touches[0];
+      updateJoystickPosition(touch.clientX, touch.clientY);
     });
 
     // Bluetooth接続
