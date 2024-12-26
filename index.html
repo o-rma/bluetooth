@@ -4,63 +4,103 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JDY-16とBluetooth通信</title>
+  <style>
+    #joystick-container {
+      width: 200px;
+      height: 200px;
+      border: 2px solid black;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    #joystick {
+      width: 50px;
+      height: 50px;
+      background-color: red;
+      border-radius: 50%;
+      position: absolute;
+      top: 75px;
+      left: 75px;
+    }
+  </style>
 </head>
 <body>
   <h1>JDY-16とBluetooth通信</h1>
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
-  <input id="input" type="text" placeholder="送信データ" />
-  <button id="send" disabled>送信</button>
   <p id="status">ステータス: 未接続</p>
   <p id="output">受信データ: </p>
 
+  <div id="joystick-container">
+    <div id="joystick"></div>
+  </div>
 
   <script>
     let bluetoothDevice;
     let gattServer;
     let service;
     let characteristic;
+    let joystickX = 0;
+    let joystickY = 0;
+    let intervalId;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
-    const sendButton = document.getElementById('send');
-    const inputField = document.getElementById('input');
     const status = document.getElementById('status');
     const output = document.getElementById('output');
 
-    // 接続ボタンイベント
+    // ジョイスティックの設定
+    const joystick = document.getElementById('joystick');
+    const container = document.getElementById('joystick-container');
+    let containerRect = container.getBoundingClientRect();
+
+    container.addEventListener('mousemove', (event) => {
+      const centerX = containerRect.width / 2;
+      const centerY = containerRect.height / 2;
+      let x = event.clientX - containerRect.left - centerX;
+      let y = event.clientY - containerRect.top - centerY;
+
+      const distance = Math.sqrt(x * x + y * y);
+      const maxDistance = containerRect.width / 2 - 25;
+      if (distance > maxDistance) {
+        const ratio = maxDistance / distance;
+        x *= ratio;
+        y *= ratio;
+      }
+
+      joystick.style.transform = `translate(${x}px, ${y}px)`;
+      joystickX = Math.round((x / maxDistance) * 100);
+      joystickY = Math.round((y / maxDistance) * 100);
+    });
+
+    // Bluetooth接続
     connectButton.addEventListener('click', async () => {
       try {
-        // デバイス検索
         bluetoothDevice = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
-          optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] // JDY-16のシリアルサービスUUID
+          optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
         });
 
-        // GATTサーバーに接続
         gattServer = await bluetoothDevice.gatt.connect();
         status.textContent = 'ステータス: 接続中';
 
-        // サービスとキャラクタリスティック取得
         service = await gattServer.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
-        characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb'); // 通信用UUID
+        characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
-        // 通信準備完了
         disconnectButton.disabled = false;
-        sendButton.disabled = false;
         connectButton.disabled = true;
 
-        // データ受信設定
         characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleData);
 
+        intervalId = setInterval(sendJoystickData, 100); // 1秒に10回送信
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
       }
     });
 
-    // 切断ボタンイベント
+    // 切断処理
     disconnectButton.addEventListener('click', async () => {
       if (gattServer && gattServer.connected) {
         gattServer.disconnect();
@@ -68,23 +108,23 @@
       status.textContent = 'ステータス: 切断';
       connectButton.disabled = false;
       disconnectButton.disabled = true;
-      sendButton.disabled = true;
+      clearInterval(intervalId);
     });
 
-    // データ送信ボタンイベント
-    sendButton.addEventListener('click', async () => {
-      const data = inputField.value;
-      const encoder = new TextEncoder();
-      await characteristic.writeValue(encoder.encode(data));
-      inputField.value = ''; // 入力フィールドをクリア
-    });
+    // データ送信
+    async function sendJoystickData() {
+      if (characteristic) {
+        const data = `${joystickX},${joystickY}`;
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(data));
+      }
+    }
 
-    // データ受信ハンドラ
+    // 受信処理
     function handleData(event) {
       const decoder = new TextDecoder();
       output.textContent += decoder.decode(event.target.value) + '\n';
     }
-
   </script>
 </body>
 </html>
