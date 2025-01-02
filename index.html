@@ -130,7 +130,7 @@
             const data = `${position.x},${position.y}`;
             await characteristic.writeValue(encoder.encode(data));
           }
-        }, 100);
+        }, 200); // 1秒間に5回（200msごとに送信）
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
