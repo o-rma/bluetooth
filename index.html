@@ -112,7 +112,7 @@
         disconnectButton.disabled = false;
         connectButton.disabled = true;
 
-        intervalId = setInterval(sendJoystickData, 100); // 1秒に10回送信
+        intervalId = setInterval(sendJoystickData, 333); // 1秒に10回送信
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
