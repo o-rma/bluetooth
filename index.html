@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JDY-16とBluetooth通信</title>
+  <title>Bluetooth通信</title>
   <style>
     #joystick-container {
       width: 200px;
@@ -133,7 +133,7 @@
     // データ送信
     async function sendJoystickData() {
       if (characteristic) {
-        const data = `${joystickX},${joystickY}`;
+        const data = `${joystickX}${joystickY}`;
         const encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(data));
       }
