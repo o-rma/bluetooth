@@ -4,6 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JDY-16とBluetooth通信</title>
+  <style>
+    body {
+      touch-action: none;
+    }
+
+    #joystick-container {
+      width: 200px;
+      height: 200px;
+      border: 1px solid black;
+      position: relative;
+      border-radius: 50%;
+      margin: 20px auto;
+      touch-action: none;
+    }
+
+    #joystick {
+      width: 50px;
+      height: 50px;
+      background-color: red;
+      position: absolute;
+      border-radius: 50%;
+      touch-action: none;
+    }
+  </style>
 </head>
 <body>
   <h1>JDY-16とBluetooth通信</h1>
@@ -11,8 +35,8 @@
   <button id="disconnect" disabled>切断</button>
   <p id="status">ステータス: 未接続</p>
 
-  <div id="joystick-container" style="width: 200px; height: 200px; border: 1px solid black; position: relative; border-radius: 50%;">
-    <div id="joystick" style="width: 50px; height: 50px; background-color: red; position: absolute; border-radius: 50%;"></div>
+  <div id="joystick-container">
+    <div id="joystick"></div>
   </div>
 
   <script>
@@ -84,7 +108,6 @@
       position.y = 0;
     }
 
-    // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
       try {
         bluetoothDevice = await navigator.bluetooth.requestDevice({
