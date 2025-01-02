@@ -127,7 +127,7 @@
         setInterval(async () => {
           if (characteristic) {
             const data = new Int16Array([position.x, position.y]);
-            await characteristic.writeValue(data.buffer);
+            await characteristic.writeValue(data);
           }
         }, 200); // 1秒間に5回（200msごとに送信）
       } catch (error) {
