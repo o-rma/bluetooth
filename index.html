@@ -133,7 +133,7 @@
     // データ送信
     async function sendJoystickData() {
       if (characteristic) {
-        const encoder = new ValueEncoder();
+        const encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(joystickX,joystickY));
       }
     }
