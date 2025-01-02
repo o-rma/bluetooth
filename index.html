@@ -103,11 +103,9 @@
 
         setInterval(async () => {
           if (characteristic) {
-            const buffer = new ArrayBuffer(4);
-            const view = new DataView(buffer);
-            view.setInt16(0, position.x, true);
-            view.setInt16(2, position.y, true);
-            await characteristic.writeValue(buffer);
+            const encoder = new TextEncoder();
+            const data = `${position.x},${position.y}`;
+            await characteristic.writeValue(encoder.encode(data));
           }
         }, 100);
       } catch (error) {
