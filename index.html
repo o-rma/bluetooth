@@ -3,21 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JDY-16とジョイスティック通信</title>
+  <title>JDY-16とBluetooth通信</title>
 </head>
 <body>
-  <h1>JDY-16とジョイスティック通信</h1>
+  <h1>JDY-16とBluetooth通信</h1>
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
   <p id="status">ステータス: 未接続</p>
-  <p id="output">受信データ: </p>
-  
-  <!-- ジョイスティック入力用 -->
-  <div>
-    <label>X軸:</label>
-    <input type="range" id="joystickX" min="-128" max="127" value="0">
-    <label>Y軸:</label>
-    <input type="range" id="joystickY" min="-128" max="127" value="0">
+
+  <div id="joystick-container" style="width: 200px; height: 200px; border: 1px solid black; position: relative;">
+    <div id="joystick" style="width: 50px; height: 50px; background-color: red; position: absolute; border-radius: 50%;"></div>
   </div>
 
   <script>
@@ -25,77 +20,108 @@
     let gattServer;
     let service;
     let characteristic;
-    let intervalId;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
     const status = document.getElementById('status');
-    const output = document.getElementById('output');
-    const joystickX = document.getElementById('joystickX');
-    const joystickY = document.getElementById('joystickY');
+
+    const joystick = document.getElementById('joystick');
+    const joystickContainer = document.getElementById('joystick-container');
+
+    let centerX = joystickContainer.offsetWidth / 2 - joystick.offsetWidth / 2;
+    let centerY = joystickContainer.offsetHeight / 2 - joystick.offsetHeight / 2;
+
+    joystick.style.left = `${centerX}px`;
+    joystick.style.top = `${centerY}px`;
+
+    let position = { x: 0, y: 0 };
+    let isDragging = false;
+
+    joystick.addEventListener('mousedown', startDrag);
+    joystick.addEventListener('touchstart', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+
+    function startDrag(event) {
+      isDragging = true;
+      event.preventDefault();
+    }
+
+    function drag(event) {
+      if (!isDragging) return;
+
+      const rect = joystickContainer.getBoundingClientRect();
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
+      let x = clientX - rect.left - joystick.offsetWidth / 2;
+      let y = clientY - rect.top - joystick.offsetHeight / 2;
+
+      const radius = joystickContainer.offsetWidth / 2 - joystick.offsetWidth / 2;
+      const dx = x - centerX;
+      const dy = y - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > radius) {
+        x = centerX + (dx / distance) * radius;
+        y = centerY + (dy / distance) * radius;
+      }
+
+      joystick.style.left = `${x}px`;
+      joystick.style.top = `${y}px`;
+
+      position.x = Math.round((x - centerX) / radius * 100);
+      position.y = Math.round((y - centerY) / radius * 100);
+    }
+
+    function endDrag() {
+      isDragging = false;
+      joystick.style.left = `${centerX}px`;
+      joystick.style.top = `${centerY}px`;
+      position.x = 0;
+      position.y = 0;
+    }
 
     // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
       try {
-        // デバイス検索
         bluetoothDevice = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
         });
 
-        // GATTサーバーに接続
         gattServer = await bluetoothDevice.gatt.connect();
         status.textContent = 'ステータス: 接続中';
 
-        // サービスとキャラクタリスティック取得
         service = await gattServer.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
         characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
-        // 通信準備完了
         disconnectButton.disabled = false;
         connectButton.disabled = true;
 
-        // データ受信設定
-        characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleData);
-
-        // 定期送信開始 (1秒間に10回)
-        intervalId = setInterval(sendJoystickData, 100);
-
+        setInterval(async () => {
+          if (characteristic) {
+            const encoder = new TextEncoder();
+            const data = `${position.x},${position.y}`;
+            await characteristic.writeValue(encoder.encode(data));
+          }
+        }, 100);
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
       }
     });
 
-    // 切断ボタンイベント
-    disconnectButton.addEventListener('click', async () => {
+    disconnectButton.addEventListener('click', () => {
       if (gattServer && gattServer.connected) {
         gattServer.disconnect();
       }
       status.textContent = 'ステータス: 切断';
       connectButton.disabled = false;
       disconnectButton.disabled = true;
-
-      // 定期送信停止
-      clearInterval(intervalId);
     });
-
-    // ジョイスティックデータ送信
-    async function sendJoystickData() {
-      if (characteristic) {
-        const data = `X:${joystickX.value},Y:${joystickY.value}`;
-        const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode(data));
-      }
-    }
-
-    // データ受信ハンドラ
-    function handleData(event) {
-      const decoder = new TextDecoder();
-      output.textContent += decoder.decode(event.target.value) + '\n';
-    }
-
   </script>
 </body>
 </html>
