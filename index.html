@@ -143,7 +143,7 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        let data = `${position.x},${position.y}`;
+        let data = `${position.x},${-position.y}`;
         const encoder = new TextEncoder();
         await characteristic.writeValue(encoder.encode(data));
       }
