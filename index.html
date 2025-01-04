@@ -133,18 +133,22 @@
     }
 
     // ジョイスティック値の送信を開始
-    function startJoystickUpdates() {
-      joystickInterval = setInterval(() => {
-        let ratio = 0;
-        if (joystickPosition.x!== 0) {
-          ratio = Math.round(Math.atan(-joystickPosition.y / joystickPosition.x)); // y/x の比率を計算し整数化
-        }
-          
-
-        const data = new Int16Array([ratio]); // Int16型に変換
-        characteristic.writeValue(data.buffer).catch(console.error); // バイナリとして送信
-      }, 100); // 100ms間隔で送信
+function startJoystickUpdates() {
+  joystickInterval = setInterval(() => {
+    let ratio = 0;
+    if (joystickPosition.x !== 0) {
+      ratio = joystickPosition.y / joystickPosition.x; // y/x の比率を計算
     }
+
+    // データをエンコード（32ビット浮動小数点数として送信）
+    const buffer = new ArrayBuffer(4); // 4バイト分のバッファ
+    const view = new DataView(buffer);
+    view.setFloat32(0, ratio, true); // リトルエンディアンでセット
+
+    characteristic.writeValue(buffer).catch(console.error); // バッファ送信
+  }, 100); // 100ms間隔で送信
+}
+
 
     // ジョイスティック値の送信を停止
     function stopJoystickUpdates() {
