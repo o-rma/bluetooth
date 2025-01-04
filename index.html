@@ -5,27 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JDY-16とBluetooth通信</title>
   <style>
-    body {
-      touch-action: none;
-    }
-
-    #joystick-container {
+    #joystick {
       width: 200px;
       height: 200px;
-      border: 1px solid black;
+      background: #ddd;
+      border-radius: 50%;
       position: relative;
-      border-radius: 50%;
-      margin: 20px auto;
-      touch-action: none;
     }
-
-    #joystick {
-      width: 50px;
-      height: 50px;
-      background-color: red;
-      position: absolute;
+    #knob {
+      width: 40px;
+      height: 40px;
+      background: #f00;
       border-radius: 50%;
-      touch-action: none;
+      position: absolute;
+      top: 80px;
+      left: 80px;
     }
   </style>
 </head>
@@ -33,81 +27,29 @@
   <h1>JDY-16とBluetooth通信</h1>
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
-  <p id="status">ステータス: 未接続</p>
-
-  <div id="joystick-container">
-    <div id="joystick"></div>
+  <div id="joystick">
+    <div id="knob"></div>
   </div>
+  <p id="status">ステータス: 未接続</p>
+  <p id="output">受信データ: </p>
 
   <script>
     let bluetoothDevice;
     let gattServer;
     let service;
     let characteristic;
+    let intervalId;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
     const status = document.getElementById('status');
-
+    const output = document.getElementById('output');
     const joystick = document.getElementById('joystick');
-    const joystickContainer = document.getElementById('joystick-container');
-
-    let centerX = joystickContainer.offsetWidth / 2 - joystick.offsetWidth / 2;
-    let centerY = joystickContainer.offsetHeight / 2 - joystick.offsetHeight / 2;
-
-    joystick.style.left = `${centerX}px`;
-    joystick.style.top = `${centerY}px`;
+    const knob = document.getElementById('knob');
 
     let position = { x: 0, y: 0 };
-    let isDragging = false;
 
-    joystick.addEventListener('mousedown', startDrag);
-    joystick.addEventListener('touchstart', startDrag);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('touchmove', drag);
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchend', endDrag);
-
-    function startDrag(event) {
-      isDragging = true;
-      event.preventDefault();
-    }
-
-    function drag(event) {
-      if (!isDragging) return;
-
-      const rect = joystickContainer.getBoundingClientRect();
-      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-
-      let x = clientX - rect.left - joystick.offsetWidth / 2;
-      let y = clientY - rect.top - joystick.offsetHeight / 2;
-
-      const radius = joystickContainer.offsetWidth / 2 - joystick.offsetWidth / 2;
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance > radius) {
-        x = centerX + (dx / distance) * radius;
-        y = centerY + (dy / distance) * radius;
-      }
-
-      joystick.style.left = `${x}px`;
-      joystick.style.top = `${y}px`;
-
-      position.x = Math.round((x - centerX) / radius * 100);
-      position.y = Math.round((y - centerY) / radius * 100);
-    }
-
-    function endDrag() {
-      isDragging = false;
-      joystick.style.left = `${centerX}px`;
-      joystick.style.top = `${centerY}px`;
-      position.x = 0;
-      position.y = 0;
-    }
-
+    // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
       try {
         bluetoothDevice = await navigator.bluetooth.requestDevice({
@@ -124,18 +66,18 @@
         disconnectButton.disabled = false;
         connectButton.disabled = true;
 
-        setInterval(async () => {
-          if (characteristic) {
-            const data = new Int16Array([position.x, position.y]);
-            await characteristic.writeValue(data);
-          }
-        }, 200); // 1秒間に5回（200msごとに送信）
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        intervalId = setInterval(sendJoystickData, 100); // 1秒に10回送信
+
       } catch (error) {
         console.error(error);
         status.textContent = 'エラー: ' + error.message;
       }
     });
 
+    // 切断ボタンイベント
     disconnectButton.addEventListener('click', () => {
       if (gattServer && gattServer.connected) {
         gattServer.disconnect();
@@ -143,7 +85,48 @@
       status.textContent = 'ステータス: 切断';
       connectButton.disabled = false;
       disconnectButton.disabled = true;
+      clearInterval(intervalId);
     });
+
+    // データ受信ハンドラ
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      output.textContent += decoder.decode(event.target.value) + '\n';
+    }
+
+    // ジョイスティックの動作
+    joystick.addEventListener('mousemove', (event) => {
+      const rect = joystick.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const x = event.clientX - rect.left - centerX;
+      const y = event.clientY - rect.top - centerY;
+      const maxDistance = rect.width / 2 - 20;
+      const distance = Math.min(Math.sqrt(x * x + y * y), maxDistance);
+      const angle = Math.atan2(y, x);
+
+      position.x = Math.round((distance * Math.cos(angle)) / maxDistance * 100);
+      position.y = Math.round((distance * Math.sin(angle)) / maxDistance * 100);
+
+      knob.style.left = `${centerX + position.x - 20}px`;
+      knob.style.top = `${centerY + position.y - 20}px`;
+    });
+
+    joystick.addEventListener('mouseleave', () => {
+      position.x = 0;
+      position.y = 0;
+      knob.style.left = '80px';
+      knob.style.top = '80px';
+    });
+
+    // ジョイスティックデータ送信
+    async function sendJoystickData() {
+      if (characteristic) {
+        const data = `${position.x},${position.y}`;
+        const encoder = new TextEncoder();
+        await characteristic.writeValue(encoder.encode(data));
+      }
+    }
   </script>
 </body>
 </html>
