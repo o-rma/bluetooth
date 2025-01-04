@@ -144,11 +144,10 @@
       if (characteristic) {
         let tanValue = 0;
         if (position.x !== 0) {
-          tanValue = Math.round(Math.atan(position.y / position.x) * 1000); // tan値をint型で送信
+          tanValue = Math.round(-position.y / position.x); // tan値をint型で送信
         }
-        const dataView = new DataView(new ArrayBuffer(2));
-        dataView.setInt16(0, tanValue, true);
-        await characteristic.writeValue(dataView);
+        let data = setInt16(tanValue);
+        await characteristic.writeValue(data);
       }
     }
   </script>
