@@ -59,6 +59,7 @@
     let service;
     let characteristic;
     let intervalId;
+    let arctan;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
@@ -142,9 +143,10 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        const data = `${position.x},${-position.y}`;
+        arctan=position.y/position.x;
+        const data = new Int16Array([arctan]);
         const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode(data));
+        await characteristic.writeValue(data);
       }
     }
   </script>
