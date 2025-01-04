@@ -143,10 +143,9 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        arctan=position.y/position.x;
-        let data = new Int16Array([arctan]);
+        let data = `${position.x},${position.y}`;
         const encoder = new TextEncoder();
-        await characteristic.writeValue(data);
+        await characteristic.writeValue(encoder.encode(data));
       }
     }
   </script>
