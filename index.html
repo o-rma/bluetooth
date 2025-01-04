@@ -138,7 +138,10 @@
         let ratio = 0;
         if (joystickPosition.x!== 0) {
           ratio = Math.round(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算し整数化
+        }else if(joystickPosition.y>0){
+          ratio=0;
         }
+          
 
         const data = new Int16Array([ratio]); // Int16型に変換
         characteristic.writeValue(data.buffer).catch(console.error); // バイナリとして送信
