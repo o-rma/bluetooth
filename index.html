@@ -137,7 +137,7 @@ function startJoystickUpdates() {
   joystickInterval = setInterval(() => {
     let ratio = 0;
     if (joystickPosition.x !== 0) {
-      ratio = joystickPosition.y / joystickPosition.x; // y/x の比率を計算
+      ratio = Math.atan(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算
     }
 
     // データをエンコード（32ビット浮動小数点数として送信）
