@@ -59,7 +59,6 @@
     let service;
     let characteristic;
     let intervalId;
-    let arctan;
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
@@ -119,8 +118,8 @@
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      let x = event.clientX - rect.left - centerX;
-      let y = event.clientY - rect.top - centerY;
+      const x = event.clientX - rect.left - centerX;
+      const y = event.clientY - rect.top - centerY;
       const maxDistance = rect.width / 2 - 20;
       const distance = Math.min(Math.sqrt(x * x + y * y), maxDistance);
       const angle = Math.atan2(y, x);
@@ -143,10 +142,12 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        arctan=position.y/position.x;
-        let data = new Int16(arctan);
+        let tanValue = 0;
+        if (position.x !== 0) {
+          tanValue = Math.round((position.y / position.x) * 1000); // tan値をint型で送信
+        }
         const encoder = new TextEncoder();
-        await characteristic.writeValue(data);
+        await characteristic.writeValue(encoder.encode(tanValue.toString()));
       }
     }
   </script>
