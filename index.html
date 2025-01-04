@@ -142,12 +142,13 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        let tanValue = 0;
+        let ratio = 0;
         if (position.x !== 0) {
-          tanValue = Math.round(-position.y / position.x); // tan値をint型で送信
+          ratio = position.y / position.x; // position.y / position.xの値を送信
         }
-        let data = setInt16(tanValue,true);
-        await characteristic.writeValue(data);
+        const dataView = new DataView(new ArrayBuffer(4));
+        dataView.setFloat32(0, ratio, true);
+        await characteristic.writeValue(dataView);
       }
     }
   </script>
