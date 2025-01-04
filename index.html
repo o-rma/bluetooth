@@ -27,6 +27,7 @@
       background: #ddd;
       border-radius: 50%;
       position: relative;
+      touch-action: none;
     }
     #knob {
       width: 40px;
@@ -66,6 +67,7 @@
     const knob = document.getElementById('knob');
 
     let position = { x: 0, y: 0 };
+    let isDragging = false;
 
     // 接続ボタンイベント
     connectButton.addEventListener('click', async () => {
@@ -106,7 +108,13 @@
     });
 
     // ジョイスティックの動作
-    joystick.addEventListener('mousemove', (event) => {
+    joystick.addEventListener('pointerdown', () => {
+      isDragging = true;
+    });
+
+    document.addEventListener('pointermove', (event) => {
+      if (!isDragging) return;
+
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
@@ -123,7 +131,8 @@
       knob.style.top = `${centerY + position.y - 20}px`;
     });
 
-    joystick.addEventListener('mouseleave', () => {
+    document.addEventListener('pointerup', () => {
+      isDragging = false;
       position.x = 0;
       position.y = 0;
       knob.style.left = '80px';
