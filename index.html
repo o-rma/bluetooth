@@ -31,7 +31,6 @@
     <div id="knob"></div>
   </div>
   <p id="status">ステータス: 未接続</p>
-  <p id="output">受信データ: </p>
 
   <script>
     let bluetoothDevice;
@@ -43,7 +42,6 @@
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
     const status = document.getElementById('status');
-    const output = document.getElementById('output');
     const joystick = document.getElementById('joystick');
     const knob = document.getElementById('knob');
 
@@ -67,9 +65,8 @@
         connectButton.disabled = true;
 
         characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleData);
 
-        intervalId = setInterval(sendJoystickData, 100); // 1秒に10回送信
+        intervalId = setInterval(sendJoystickData, 200); // 1秒に5回送信
 
       } catch (error) {
         console.error(error);
@@ -87,12 +84,6 @@
       disconnectButton.disabled = true;
       clearInterval(intervalId);
     });
-
-    // データ受信ハンドラ
-    function handleData(event) {
-      const decoder = new TextDecoder();
-      output.textContent += decoder.decode(event.target.value) + '\n';
-    }
 
     // ジョイスティックの動作
     joystick.addEventListener('mousemove', (event) => {
