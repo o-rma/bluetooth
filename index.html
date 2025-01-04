@@ -7,22 +7,23 @@
   <style>
     #joystick-container {
       position: relative;
-      width: 150px;
-      height: 150px;
-      background-color: #ddd;
+      width: 300px;
+      height: 300px;
+      background-color: #eee;
       border-radius: 50%;
       margin: 20px auto;
       touch-action: none;
     }
     #joystick {
       position: absolute;
-      width: 50px;
-      height: 50px;
-      background-color: #555;
+      width: 60px;
+      height: 60px;
+      background-color: red;
       border-radius: 50%;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      transition: transform 0.1s ease-out;
     }
   </style>
 </head>
@@ -30,11 +31,8 @@
   <h1>JDY-16とBluetooth通信</h1>
   <button id="connect">接続</button>
   <button id="disconnect" disabled>切断</button>
-  <input id="input" type="text" placeholder="送信データ" />
-  <button id="send" disabled>送信</button>
   <p id="status">ステータス: 未接続</p>
-  <p id="output">受信データ: </p>
-  
+
   <div id="joystick-container">
     <div id="joystick"></div>
   </div>
@@ -48,10 +46,7 @@
 
     const connectButton = document.getElementById('connect');
     const disconnectButton = document.getElementById('disconnect');
-    const sendButton = document.getElementById('send');
-    const inputField = document.getElementById('input');
     const status = document.getElementById('status');
-    const output = document.getElementById('output');
     const joystick = document.getElementById('joystick');
     const joystickContainer = document.getElementById('joystick-container');
 
@@ -72,11 +67,7 @@
         characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
 
         disconnectButton.disabled = false;
-        sendButton.disabled = false;
         connectButton.disabled = true;
-
-        characteristic.startNotifications();
-        characteristic.addEventListener('characteristicvaluechanged', handleData);
 
         startJoystickUpdates();
       } catch (error) {
@@ -93,24 +84,9 @@
       status.textContent = 'ステータス: 切断';
       connectButton.disabled = false;
       disconnectButton.disabled = true;
-      sendButton.disabled = true;
 
       stopJoystickUpdates();
     });
-
-    // データ送信ボタンイベント
-    sendButton.addEventListener('click', async () => {
-      const data = inputField.value;
-      const encoder = new TextEncoder();
-      await characteristic.writeValue(encoder.encode(data));
-      inputField.value = '';
-    });
-
-    // データ受信ハンドラ
-    function handleData(event) {
-      const decoder = new TextDecoder();
-      output.textContent += decoder.decode(event.target.value) + '\n';
-    }
 
     // ジョイスティック操作イベント
     joystickContainer.addEventListener('pointerdown', startDrag);
@@ -131,7 +107,7 @@
 
     function endDrag() {
       isDragging = false;
-      joystickPosition = { x: 0, y: 0 };
+      joystickPosition = { x: 0, y: 0 }; // 中央に戻す
       updateJoystickVisual();
     }
 
@@ -142,7 +118,8 @@
       const offsetX = event.clientX - rect.left - centerX;
       const offsetY = event.clientY - rect.top - centerY;
 
-      const distance = Math.min(Math.sqrt(offsetX**2 + offsetY**2), centerX);
+      const maxDistance = centerX; // 最大半径
+      const distance = Math.min(Math.sqrt(offsetX**2 + offsetY**2), maxDistance);
       const angle = Math.atan2(offsetY, offsetX);
 
       joystickPosition.x = Math.round(distance * Math.cos(angle));
@@ -152,7 +129,7 @@
     }
 
     function updateJoystickVisual() {
-      joystick.style.transform = `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`;
+      joystick.style.transform = `translate(calc(${joystickPosition.x}px - 50%), calc(${joystickPosition.y}px - 50%))`;
     }
 
     // ジョイスティック値の送信を開始
