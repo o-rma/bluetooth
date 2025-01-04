@@ -137,9 +137,7 @@
       joystickInterval = setInterval(() => {
         let ratio = 0;
         if (joystickPosition.x!== 0) {
-          ratio = Math.round(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算し整数化
-        }else if(joystickPosition.y>0){
-          ratio=0;
+          ratio = Math.round(Math.atan(-joystickPosition.y / joystickPosition.x)); // y/x の比率を計算し整数化
         }
           
 
