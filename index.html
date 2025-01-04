@@ -119,8 +119,8 @@
       const rect = joystick.getBoundingClientRect();
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      const x = event.clientX - rect.left - centerX;
-      const y = event.clientY - rect.top - centerY;
+      let x = event.clientX - rect.left - centerX;
+      let y = event.clientY - rect.top - centerY;
       const maxDistance = rect.width / 2 - 20;
       const distance = Math.min(Math.sqrt(x * x + y * y), maxDistance);
       const angle = Math.atan2(y, x);
@@ -143,9 +143,10 @@
     // ジョイスティックデータ送信
     async function sendJoystickData() {
       if (characteristic) {
-        let data = `${position.x},${-position.y}`;
+        arctan=position.y/position.x;
+        let data = new Int16Array([arctan]);
         const encoder = new TextEncoder();
-        await characteristic.writeValue(encoder.encode(data));
+        await characteristic.writeValue(data);
       }
     }
   </script>
