@@ -139,7 +139,7 @@ function startJoystickUpdates() {
     if (joystickPosition.x !== 0) {
       ratio = Math.atan(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算
     }else if(joystickPosition.y > 0) {
-      raito=0;
+      ratio=0;
     }
 
     // データをエンコード（32ビット浮動小数点数として送信）
