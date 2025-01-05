@@ -138,6 +138,8 @@ function startJoystickUpdates() {
     let ratio = 0;
     if(joystickPosition.y > 0) {
       ratio = 0;
+    }else if(joystickPosition.x === 0){
+      ratio = 3.1415/2;
     }else if (joystickPosition.x !== 0) {
       ratio = Math.atan(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算
     }
