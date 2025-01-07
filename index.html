@@ -150,7 +150,7 @@ function startJoystickUpdates() {
     view.setFloat32(0, ratio, true); // リトルエンディアンでセット
 
     characteristic.writeValue(buffer).catch(console.error); // バッファ送信
-  }, 200); // 100ms間隔で送信
+  }, 300); // 100ms間隔で送信
 }
 
 
