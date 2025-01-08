@@ -145,7 +145,7 @@ function startJoystickUpdates() {
     }
 
     // データをエンコード（32ビット浮動小数点数として送信）
-    const buffer = new ArrayBuffer(4); // 4バイト分のバッファ
+    const buffer = new ArrayBuffer(2); // 4バイト分のバッファ
     const view = new DataView(buffer);
     view.setFloat32(0, ratio, true); // リトルエンディアンでセット
 
