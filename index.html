@@ -143,12 +143,11 @@ function startJoystickUpdates() {
     }else if (joystickPosition.x !== 0) {
       ratio = Math.atan(-joystickPosition.y / joystickPosition.x); // y/x の比率を計算
     }
-    const intAngle = Math.round(ratio * 100);
 
     // データをエンコード（32ビット浮動小数点数として送信）
     const buffer = new ArrayBuffer(2); // 4バイト分のバッファ
     const view = new DataView(buffer);
-    view.setFloat16(0, intAngle, true); // リトルエンディアンでセット
+    view.setFloat16(0, ratio, true); // リトルエンディアンでセット
 
     characteristic.writeValue(buffer).catch(console.error); // バッファ送信
   }, 100); // 100ms間隔で送信
