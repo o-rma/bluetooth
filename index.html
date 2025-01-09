@@ -78,6 +78,11 @@
 
     // 切断ボタンイベント
     disconnectButton.addEventListener('click', async () => {
+      const ratio=math.round(2.1*180/3.1415)
+   　 const buffer = new ArrayBuffer(4); // 4バイト分のバッファ
+    　const view = new DataView(buffer);
+    　view.setFloat32(0, ratio, true); // リトルエンディアンでセット
+    　characteristic.writeValue(buffer).catch(console.error); // バッファ送信
       if (gattServer && gattServer.connected) {
         gattServer.disconnect();
       }
@@ -150,7 +155,7 @@ function startJoystickUpdates() {
     view.setFloat32(0, ratio, true); // リトルエンディアンでセット
 
     characteristic.writeValue(buffer).catch(console.error); // バッファ送信
-  }, 300); // 100ms間隔で送信
+  }, 200); // 100ms間隔で送信
 }
 
 
