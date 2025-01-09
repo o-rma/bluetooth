@@ -78,7 +78,7 @@
 
     // 切断ボタンイベント
     disconnectButton.addEventListener('click', async () => {
-      const ratio=math.round(2.1*180/3.1415)
+      const ratio=Math.round((2.1*180)/3.1415)
    　 const buffer = new ArrayBuffer(4); // 4バイト分のバッファ
     　const view = new DataView(buffer);
     　view.setFloat32(0, ratio, true); // リトルエンディアンでセット
