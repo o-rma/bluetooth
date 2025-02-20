@@ -135,9 +135,9 @@
     // ジョイスティック値の送信を開始
 function startJoystickUpdates() {
   joystickInterval = setInterval(() => {
-    let ratio = 0;
+    let ratio = 3.1415/2;
     if(joystickPosition.y > 0) {
-      ratio = 0;
+      ratio = ratio;
     }else if(joystickPosition.x === 0 && joystickPosition.y !== 0){
       ratio = 3.1415/2;
     }else if (joystickPosition.x !== 0) {
